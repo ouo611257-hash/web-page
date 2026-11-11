@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>歐拉圓（九點圓）· The Nine-Point Circle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0e1114; --panel:#171b1f; --ink:#e8e9e6; --muted:#98a2ab; --line:#2a3036;
+  --accent:#2dd4bf; --canvas:#12161a; --grid:#1d2328;
+  --tri:#e8e9e6; --circ:#8fa0b8; --nine:#2dd4bf; --euler:#fb7185; --inc:#e5b53a;
+  --alt:#fb923c; --med:#5eead4;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Inter",system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Noto Serif TC",Georgia,serif;line-height:1.3;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* language switching */
+body[data-lang=zh] .en{display:none}
+body[data-lang=en] .zh{display:none}
+body[data-lang=both] .en{display:block;color:var(--muted);font-size:.9em;line-height:1.55}
+body[data-lang=both] .inl .en{display:inline;font-size:1em}
+body[data-lang=both] .inl .en::before{content:" · "}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;justify-content:space-between;height:52px;gap:12px}
+.brand{font-family:"Noto Serif TC",serif;font-weight:700;font-size:15px;white-space:nowrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;color:var(--muted);font:500 13px "Noto Sans TC",sans-serif;padding:6px 13px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+
+/* hero */
+.hero{padding:56px 0 8px;border-bottom:0}
+.eyebrow{font:500 12px "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.hero h1{font-size:clamp(30px,5.2vw,52px);letter-spacing:-.01em}
+.hero h1 .en{font-size:.5em;font-family:"Noto Serif TC",serif;color:var(--muted);font-weight:600;margin-top:6px}
+body[data-lang=en] .hero h1{font-size:clamp(30px,5vw,48px)}
+body[data-lang=en] .hero h1 .en{font-size:1em;color:var(--ink)}
+.lede{max-width:720px;margin-top:16px;font-size:17px}
+
+/* app */
+.app{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,1fr);gap:20px;margin-top:28px;align-items:stretch}
+@media(max-width:900px){.app{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.stage{padding:10px;position:relative}
+svg#cv{width:100%;height:auto;display:block;background:var(--canvas);border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+.hint{position:absolute;left:22px;bottom:20px;font-size:12.5px;color:var(--muted);pointer-events:none;background:color-mix(in srgb,var(--panel) 80%,transparent);padding:2px 8px;border-radius:8px}
+.side{padding:0;display:flex;flex-direction:column}
+.side>div{padding:18px 20px;border-bottom:1px solid var(--line)}
+.side>div:last-child{border-bottom:0}
+.side h3{font-size:12px;font-family:"JetBrains Mono","Noto Sans TC",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:12px}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.toggles label{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;line-height:1.3}
+.toggles input{accent-color:var(--accent);width:16px;height:16px;margin:0;flex:none}
+.sw{width:14px;height:3px;border-radius:2px;flex:none}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.presets button,.btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 13px "Noto Sans TC",sans-serif;padding:8px 6px;border-radius:10px;cursor:pointer;text-align:center}
+.presets button:hover,.btn:hover{border-color:var(--accent);color:var(--accent)}
+table.ro{width:100%;border-collapse:collapse;font-size:13.5px}
+table.ro td{padding:8px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+table.ro td:last-child{text-align:right;font:500 13px "JetBrains Mono",monospace;white-space:nowrap;padding-left:8px}
+table.ro td:first-child .en{font-size:.85em}
+.ok{color:var(--accent)}
+
+/* sections */
+section{padding:64px 0 0}
+section>.wrap>h2{font-size:clamp(22px,3vw,30px);margin-bottom:8px;padding-left:14px;border-left:4px solid var(--accent)}
+section>.wrap>h2 .en{font-size:.62em;font-family:"Noto Sans TC",sans-serif;font-weight:500}
+.sub{color:var(--muted);max-width:720px;margin:0 0 24px;padding-left:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:820px){.grid3{grid-template-columns:1fr}}
+.group{padding:20px 20px 16px;border-top:4px solid var(--c)}
+.group h3{font-size:16px;margin-bottom:2px}
+.group p{margin:4px 0 10px;font-size:14px}
+.chips{display:flex;flex-direction:column;gap:6px}
+.chip{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13.5px;text-align:left;color:var(--ink);font-family:inherit;line-height:1.35}
+.chip:hover,.chip.on{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 25%,transparent)}
+.num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:#0e1114;font:600 12px "JetBrains Mono",monospace;display:grid;place-items:center}
+
+.proof{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:820px){.proof{grid-template-columns:1fr}}
+.step{padding:22px 24px}
+.step h3{font-size:16px;margin-bottom:6px}
+.step p{margin:6px 0;font-size:14.5px}
+.fact{padding:22px 26px}
+.fact ul{margin:8px 0 0;padding-left:20px}
+.fact li{margin:6px 0;font-size:14.5px}
+code,.m{font-family:"JetBrains Mono",monospace;font-size:.92em;background:color-mix(in srgb,var(--ink) 7%,transparent);padding:1px 6px;border-radius:5px}
+footer{padding:64px 0 72px;color:var(--muted);font-size:13px}
+.big{font:600 34px "JetBrains Mono",monospace;color:var(--accent);line-height:1.1}
+.bigcap{font-size:12.5px;color:var(--muted);margin:6px 0 14px}
+.lede b{color:var(--accent);font-weight:700}
+.hero h1{margin-bottom:4px}
+.lede{font-size:19px;margin-top:14px}
+.key{padding:26px 28px}
+.keyline{font:700 clamp(18px,2.4vw,24px)/1.4 "Noto Serif TC",serif;margin-bottom:14px}
+.keyline b{color:var(--accent)}
+.keyline .en{font:500 15px/1.5 "Noto Sans TC",sans-serif}
+.key ul{margin:0;padding-left:20px}
+.key li{margin:8px 0;font-size:14.5px}
+.group h3{margin-bottom:12px}
+</style>
+</head>
+<body data-lang="both">
+
+<div class="bar"><div class="wrap">
+  <div class="brand"><span class="zh">九點圓</span><span class="en inl">Nine-Point Circle</span></div>
+  <div class="seg" role="group" aria-label="Language / 語言">
+    <button data-l="zh" aria-pressed="false">中文</button>
+    <button data-l="both" aria-pressed="true">雙語</button>
+    <button data-l="en" aria-pressed="false">EN</button>
+  </div>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Euler · Feuerbach</div>
+  <h1><span class="zh">歐拉圓（九點圓）</span><span class="en">The Nine-Point Circle</span></h1>
+  <p class="lede">
+    <span class="zh"><b>任何三角形的九個特殊點，永遠在同一個圓上。</b>拖動頂點試試。</span>
+    <span class="en"><b>Nine special points of any triangle always lie on one circle.</b> Drag a vertex to try.</span>
+  </p>
+</div></header>
+
+<main class="wrap">
+  <div class="app">
+    <div class="card stage">
+      <svg id="cv" viewBox="0 0 800 560" role="img" aria-label="Interactive nine-point circle / 可互動的九點圓">
+        <defs>
+          <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="var(--grid)" stroke-width="1"/></pattern>
+        </defs>
+        <rect width="800" height="560" fill="url(#g)"/>
+        <g id="scene"></g>
+      </svg>
+      <div class="hint"><span class="zh">拖動 A、B、C 頂點</span><span class="en inl">Drag A, B, C</span></div>
+    </div>
+
+    <aside class="card side">
+      <div>
+        <h3><span class="zh">圖層</span><span class="en inl">Layers</span></h3>
+        <div class="toggles" id="toggles"></div>
+      </div>
+      <div>
+        <h3><span class="zh">預設三角形</span><span class="en inl">Presets</span></h3>
+        <div class="presets" id="presets"></div>
+      </div>
+      <div>
+        <h3><span class="zh">即時驗證</span><span class="en inl">Live check</span></h3>
+        <div class="big"><span id="r-eps">—</span></div>
+        <div class="bigcap"><span class="zh">九點到圓的最大誤差（≈ 0）</span><span class="en">Max distance of the 9 points from the circle (≈ 0)</span></div>
+        <table class="ro">
+          <tr><td><span class="zh">九點圓半徑</span><span class="en">Radius</span></td><td id="r-r9">—</td></tr>
+          <tr><td><span class="zh">歐拉線 OG : GH</span><span class="en">Euler line OG : GH</span></td><td id="r-ratio">—</td></tr>
+          <tr><td><span class="zh">不重合的點</span><span class="en">Distinct points</span></td><td id="r-distinct">—</td></tr>
+        </table>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<section id="points"><div class="wrap">
+  <h2><span class="zh">九個點是哪九個？</span><span class="en inl">Which nine points?</span></h2>
+  <p class="sub"><span class="zh">滑過任一項，圖上會高亮。</span><span class="en">Hover an item to highlight it.</span></p>
+  <div class="grid3" id="groups"></div>
+</div></section>
+
+<section id="why"><div class="wrap">
+  <h2><span class="zh">為什麼共圓？</span><span class="en inl">Why?</span></h2>
+  <div class="card key">
+    <div class="keyline"><span class="zh">把<b>外接圓縮小一半</b>，就是九點圓。</span><span class="en">Shrink the <b>circumcircle by half</b> and you get the nine-point circle.</span></div>
+    <ul>
+      <li><span class="zh">以垂心 H 為中心、比例 ½：頂點 → 第 7–9 點；垂足 → 第 4–6 點。</span><span class="en">Homothety at H, ratio ½: vertices → points 7–9; reflected feet → points 4–6.</span></li>
+      <li><span class="zh">以重心 G 為中心、比例 −½：頂點 → 對邊中點（第 1–3 點）。</span><span class="en">Homothety at G, ratio −½: vertices → opposite midpoints (points 1–3).</span></li>
+      <li><span class="zh">圓心 N 是 O 與 H 的中點，半徑是 R/2。</span><span class="en">Center N is the midpoint of O and H; radius is R/2.</span></li>
+    </ul>
+  </div>
+</div></section>
+
+<footer><div class="wrap"><span class="zh">單位：100 像素 = 1 單位。</span><span class="en">Units: 100 px = 1 unit.</span></div></footer>
+
+<script>
+(function(){
+  /* ---------- language ---------- */
+  var body=document.body;
+  function setLang(l){
+    body.setAttribute('data-lang',l);
+    document.documentElement.lang = l==='en' ? 'en' : 'zh-Hant';
+    document.querySelectorAll('.seg button').forEach(function(b){b.setAttribute('aria-pressed', b.dataset.l===l);});
+    try{localStorage.setItem('npc-lang',l);}catch(e){}
+  }
+  document.querySelectorAll('.seg button').forEach(function(b){b.addEventListener('click',function(){setLang(b.dataset.l);});});
+  try{var sv=localStorage.getItem('npc-lang'); if(sv) setLang(sv);}catch(e){}
+
+  /* ---------- state ---------- */
+  var P={A:{x:400,y:90},B:{x:190,y:440},C:{x:620,y:390}};
+  var S={circ:true,nine:true,euler:true,alt:true,med:false,inc:false,labels:true};
+  var hi=-1;
+
+  var presets=[
+    {zh:'銳角',en:'Acute',p:{A:{x:400,y:90},B:{x:190,y:440},C:{x:620,y:390}}},
+    {zh:'直角',en:'Right',p:{A:{x:230,y:110},B:{x:600,y:440},C:{x:230,y:440}}},
+    {zh:'鈍角',en:'Obtuse',p:{A:{x:520,y:170},B:{x:150,y:430},C:{x:330,y:440}}},
+    {zh:'正三角',en:'Equilateral',p:{A:{x:400,y:80},B:{x:400-228.5,y:80+396},C:{x:400+228.5,y:80+396}}},
+    {zh:'等腰',en:'Isosceles',p:{A:{x:400,y:70},B:{x:230,y:450},C:{x:570,y:450}}}
+  ];
+  var toggles=[
+    {k:'nine',zh:'九點圓',en:'Nine-point circle',c:'var(--nine)'},
+    {k:'circ',zh:'外接圓',en:'Circumcircle',c:'var(--circ)'},
+    {k:'euler',zh:'歐拉線',en:'Euler line',c:'var(--euler)'},
+    {k:'alt',zh:'三條高',en:'Altitudes',c:'var(--alt)'},
+    {k:'labels',zh:'點的編號',en:'Point labels',c:'var(--ink)'}
+  ];
+  var groups=[
+    {c:'#2dd4bf',zh:'三邊中點',en:'Side midpoints',dz:'每條邊的中點。',de:'The midpoint of each side.',items:[
+      {n:1,zh:'BC 的中點',en:'Midpoint of BC'},{n:2,zh:'CA 的中點',en:'Midpoint of CA'},{n:3,zh:'AB 的中點',en:'Midpoint of AB'}]},
+    {c:'#fb923c',zh:'三條高的垂足',en:'Feet of the altitudes',dz:'從頂點向對邊作垂線的落點。',de:'Where each altitude meets the opposite side.',items:[
+      {n:4,zh:'A 到 BC 的垂足',en:'Foot from A on BC'},{n:5,zh:'B 到 CA 的垂足',en:'Foot from B on CA'},{n:6,zh:'C 到 AB 的垂足',en:'Foot from C on AB'}]},
+    {c:'#a78bfa',zh:'頂點與垂心連線的中點',en:'Vertex–orthocenter midpoints',dz:'垂心 H 與各頂點連線的中點。',de:'Midpoints of the segments from H to each vertex.',items:[
+      {n:7,zh:'AH 的中點',en:'Midpoint of AH'},{n:8,zh:'BH 的中點',en:'Midpoint of BH'},{n:9,zh:'CH 的中點',en:'Midpoint of CH'}]}
+  ];
+  var ptColor=['#2dd4bf','#2dd4bf','#2dd4bf','#fb923c','#fb923c','#fb923c','#a78bfa','#a78bfa','#a78bfa'];
+
+  /* ---------- UI build ---------- */
+  var tg=document.getElementById('toggles');
+  toggles.forEach(function(t){
+    var l=document.createElement('label');
+    l.innerHTML='<input type="checkbox" '+(S[t.k]?'checked':'')+'><span class="sw" style="background:'+t.c+'"></span><span class="inl"><span class="zh">'+t.zh+'</span><span class="en">'+t.en+'</span></span>';
+    l.querySelector('input').addEventListener('change',function(e){S[t.k]=e.target.checked;render();});
+    tg.appendChild(l);
+  });
+  var pr=document.getElementById('presets');
+  presets.forEach(function(p){
+    var b=document.createElement('button');
+    b.innerHTML='<span class="inl"><span class="zh">'+p.zh+'</span><span class="en">'+p.en+'</span></span>';
+    b.addEventListener('click',function(){P={A:{x:p.p.A.x,y:p.p.A.y},B:{x:p.p.B.x,y:p.p.B.y},C:{x:p.p.C.x,y:p.p.C.y}};render();});
+    pr.appendChild(b);
+  });
+  var gr=document.getElementById('groups');
+  groups.forEach(function(g){
+    var d=document.createElement('div');d.className='card group';d.style.setProperty('--c',g.c);
+    var h='<h3><span class="zh">'+g.zh+'</span><span class="en">'+g.en+'</span></h3><div class="chips">';
+    g.items.forEach(function(it){
+      h+='<button class="chip" data-n="'+it.n+'"><span class="num">'+it.n+'</span><span><span class="zh">'+it.zh+'</span><span class="en">'+it.en+'</span></span></button>';
+    });
+    d.innerHTML=h+'</div>';gr.appendChild(d);
+  });
+  gr.querySelectorAll('.chip').forEach(function(ch){
+    var n=+ch.dataset.n-1;
+    function on(){hi=n;gr.querySelectorAll('.chip').forEach(function(c){c.classList.toggle('on',c===ch);});render();}
+    function off(){hi=-1;ch.classList.remove('on');render();}
+    ch.addEventListener('mouseenter',on);ch.addEventListener('mouseleave',off);
+    ch.addEventListener('focus',on);ch.addEventListener('blur',off);
+    ch.addEventListener('click',function(){hi===n?off():on();});
+  });
+
+  /* ---------- geometry ---------- */
+  function add(a,b){return {x:a.x+b.x,y:a.y+b.y};}
+  function sub(a,b){return {x:a.x-b.x,y:a.y-b.y};}
+  function mul(a,k){return {x:a.x*k,y:a.y*k};}
+  function mid(a,b){return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
+  function dot(a,b){return a.x*b.x+a.y*b.y;}
+  function len(a){return Math.hypot(a.x,a.y);}
+  function dist(a,b){return len(sub(a,b));}
+  function foot(p,q,r){var d=sub(r,q),t=dot(sub(p,q),d)/dot(d,d);return add(q,mul(d,t));}
+
+  function compute(){
+    var A=P.A,B=P.B,C=P.C;
+    var d=2*(A.x*(B.y-C.y)+B.x*(C.y-A.y)+C.x*(A.y-B.y));
+    if(Math.abs(d)<1e-3) return null;
+    var a2=A.x*A.x+A.y*A.y,b2=B.x*B.x+B.y*B.y,c2=C.x*C.x+C.y*C.y;
+    var O={x:(a2*(B.y-C.y)+b2*(C.y-A.y)+c2*(A.y-B.y))/d, y:(a2*(C.x-B.x)+b2*(A.x-C.x)+c2*(B.x-A.x))/d};
+    var G=mul(add(add(A,B),C),1/3);
+    var H=sub(add(add(A,B),C),mul(O,2));
+    var N=mid(O,H);
+    var R=dist(O,A);
+    var Ma=mid(B,C),Mb=mid(C,A),Mc=mid(A,B);
+    var Da=foot(A,B,C),Db=foot(B,C,A),Dc=foot(C,A,B);
+    var Ea=mid(A,H),Eb=mid(B,H),Ec=mid(C,H);
+    var pts=[Ma,Mb,Mc,Da,Db,Dc,Ea,Eb,Ec];
+    var eps=0;pts.forEach(function(p){eps=Math.max(eps,Math.abs(dist(p,N)-R/2));});
+    var a=dist(B,C),b=dist(C,A),c=dist(A,B),s=(a+b+c)/2;
+    var area=Math.abs((B.x-A.x)*(C.y-A.y)-(C.x-A.x)*(B.y-A.y))/2;
+    var I={x:(a*A.x+b*B.x+c*C.x)/(2*s),y:(a*A.y+b*B.y+c*C.y)/(2*s)};
+    var ir=area/s;
+    var ang=[Math.acos(dot(sub(B,A),sub(C,A))/(c*b)),Math.acos(dot(sub(A,B),sub(C,B))/(c*a)),Math.acos(dot(sub(A,C),sub(B,C))/(b*a))].map(function(r){return r*180/Math.PI;});
+    var mx=Math.max.apply(null,ang);
+    var type=mx<88?'acute':(mx>92?'obtuse':'right');
+    var eq=Math.max(a,b,c)-Math.min(a,b,c)<2;
+    return {A:A,B:B,C:C,O:O,G:G,H:H,N:N,R:R,pts:pts,eps:eps,I:I,ir:ir,type:type,eq:eq};
+  }
+  function distinct(pts){
+    var u=[];pts.forEach(function(p){if(!u.some(function(q){return dist(p,q)<1.5;}))u.push(p);});return u.length;
+  }
+  function f(v){return (v/100).toFixed(2);}
+  function esc(n){return Math.round(n*100)/100;}
+
+  /* ---------- render ---------- */
+  var scene=document.getElementById('scene');
+  function lbl(p,t,dx,dy,cls){return '<text x="'+esc(p.x+dx)+'" y="'+esc(p.y+dy)+'" class="'+(cls||'lt')+'">'+t+'</text>';}
+
+  function render(){
+    var c=compute();
+    if(!c){return;}
+    var s='';
+    var A=c.A,B=c.B,C=c.C,O=c.O,G=c.G,H=c.H,N=c.N,R=c.R;
+    if(S.inc) s+='<circle cx="'+esc(c.I.x)+'" cy="'+esc(c.I.y)+'" r="'+esc(c.ir)+'" fill="var(--inc)" fill-opacity=".10" stroke="var(--inc)" stroke-width="2"/>';
+    if(S.circ) s+='<circle cx="'+esc(O.x)+'" cy="'+esc(O.y)+'" r="'+esc(R)+'" fill="none" stroke="var(--circ)" stroke-width="1.6" stroke-dasharray="6 5"/>';
+    if(S.nine) s+='<circle cx="'+esc(N.x)+'" cy="'+esc(N.y)+'" r="'+esc(R/2)+'" fill="var(--nine)" fill-opacity=".07" stroke="var(--nine)" stroke-width="3"/>';
+
+    if(S.med){
+      [[A,mid(B,C)],[B,mid(C,A)],[C,mid(A,B)]].forEach(function(m){
+        s+='<line x1="'+esc(m[0].x)+'" y1="'+esc(m[0].y)+'" x2="'+esc(m[1].x)+'" y2="'+esc(m[1].y)+'" stroke="var(--med)" stroke-width="1.4" stroke-dasharray="2 4"/>';
+      });
+    }
+    if(S.alt){
+      var fts=[[A,c.pts[3]],[B,c.pts[4]],[C,c.pts[5]]];
+      fts.forEach(function(m){
+        var v=m[0],ft=m[1],dir=sub(ft,v),dd=dot(dir,dir),th=dot(sub(H,v),dir)/dd;
+        var t0=Math.min(0,1,th),t1=Math.max(0,1,th);
+        var p0=add(v,mul(dir,t0)),p1=add(v,mul(dir,t1));
+        s+='<line x1="'+esc(p0.x)+'" y1="'+esc(p0.y)+'" x2="'+esc(p1.x)+'" y2="'+esc(p1.y)+'" stroke="var(--alt)" stroke-width="1.4" stroke-dasharray="7 4"/>';
+      });
+    }
+    s+='<polygon points="'+[A,B,C].map(function(p){return esc(p.x)+','+esc(p.y);}).join(' ')+'" fill="var(--tri)" fill-opacity=".04" stroke="var(--tri)" stroke-width="2.4" stroke-linejoin="round"/>';
+
+    if(S.euler && dist(O,H)>0.8){
+      var dir=sub(H,O),L=len(dir),u=mul(dir,1/L);
+      var p0=sub(O,mul(u,1400)),p1=add(O,mul(u,1400));
+      s+='<line x1="'+esc(p0.x)+'" y1="'+esc(p0.y)+'" x2="'+esc(p1.x)+'" y2="'+esc(p1.y)+'" stroke="var(--euler)" stroke-width="1.8"/>';
+    }
+
+    /* nine points */
+    c.pts.forEach(function(p,i){
+      var on=(i===hi);
+      if(on) s+='<circle cx="'+esc(p.x)+'" cy="'+esc(p.y)+'" r="16" fill="'+ptColor[i]+'" fill-opacity=".22"/>';
+      s+='<circle cx="'+esc(p.x)+'" cy="'+esc(p.y)+'" r="'+(on?7.5:5.5)+'" fill="'+ptColor[i]+'" stroke="var(--canvas)" stroke-width="1.5"/>';
+    });
+    if(S.labels){
+      /* offset labels radially away from N so they rarely collide with the circle */
+      c.pts.forEach(function(p,i){
+        var v=sub(p,N),l=len(v)||1;
+        s+='<text x="'+esc(p.x+v.x/l*14)+'" y="'+esc(p.y+v.y/l*14+4)+'" text-anchor="middle" class="nl" fill="'+ptColor[i]+'">'+(i+1)+'</text>';
+      });
+    }
+
+    /* special points */
+    function dotp(p,col,r,name,dx,dy){
+      var out='<circle cx="'+esc(p.x)+'" cy="'+esc(p.y)+'" r="'+r+'" fill="'+col+'" stroke="var(--canvas)" stroke-width="2"/>';
+      if(S.labels) out+=lbl(p,name,dx,dy,'lt');
+      return out;
+    }
+    if(S.inc) s+=dotp(c.I,'var(--inc)',4,'I',8,-8);
+    if(S.euler||S.circ||S.nine){
+      s+=dotp(G,'#16a34a',4.5,'G',8,16);
+      s+=dotp(O,'var(--circ)',4.5,'O',-18,-8);
+      s+=dotp(H,'var(--euler)',5.5,'H',9,-9);
+      s+=dotp(N,'var(--nine)',5.5,'N',9,18);
+    }
+
+    /* vertices */
+    [['A',A],['B',B],['C',C]].forEach(function(v){
+      var p=v[1];
+      s+='<circle cx="'+esc(p.x)+'" cy="'+esc(p.y)+'" r="22" fill="transparent" data-v="'+v[0]+'" style="cursor:grab"/>';
+      s+='<circle cx="'+esc(p.x)+'" cy="'+esc(p.y)+'" r="9" fill="var(--panel)" stroke="var(--tri)" stroke-width="2.6" data-v="'+v[0]+'" style="cursor:grab"/>';
+      var vv=sub(p,mul(add(add(A,B),C),1/3)),l=len(vv)||1;
+      s+='<text x="'+esc(p.x+vv.x/l*24)+'" y="'+esc(p.y+vv.y/l*24+7)+'" text-anchor="middle" class="vt">'+v[0]+'</text>';
+    });
+    scene.innerHTML=s;
+
+    /* readout */
+    document.getElementById('r-r9').textContent=f(R/2);
+    document.getElementById('r-eps').textContent='< '+(c.eps<1e-6?'0.000001':c.eps.toFixed(6));
+    document.getElementById('r-distinct').textContent=distinct(c.pts)+' / 9';
+    var og=dist(O,G),gh=dist(G,H);
+    document.getElementById('r-ratio').textContent=(c.eq||gh<0.5)?'—':(og/gh).toFixed(3);
+  }
+
+  /* keep the type cell correct when language changes */
+  var obs=new MutationObserver(function(){render();});
+  obs.observe(body,{attributes:true,attributeFilter:['data-lang']});
+
+  /* ---------- dragging ---------- */
+  var svg=document.getElementById('cv'),drag=null;
+  function toSvg(e){
+    var pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+    var m=svg.getScreenCTM();if(!m)return null;
+    var r=pt.matrixTransform(m.inverse());
+    return {x:Math.min(780,Math.max(20,r.x)),y:Math.min(540,Math.max(20,r.y))};
+  }
+  svg.addEventListener('pointerdown',function(e){
+    var v=e.target.getAttribute&&e.target.getAttribute('data-v');
+    if(!v)return;
+    drag=v;try{svg.setPointerCapture(e.pointerId);}catch(_){}
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    var p=toSvg(e);if(!p)return;
+    var old=P[drag];P[drag]=p;
+    if(!compute()){P[drag]=old;}   // refuse degenerate (collinear) triangles
+    render();
+  });
+  function end(e){drag=null;try{svg.releasePointerCapture(e.pointerId);}catch(_){}}
+  svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+
+  /* svg text styles */
+  var st=document.createElement('style');
+  st.textContent='#cv .lt{font:700 15px "Noto Serif TC",Georgia,serif;fill:var(--ink)}#cv .vt{font:700 22px "Noto Serif TC",Georgia,serif;fill:var(--ink)}#cv .nl{font:600 11px "JetBrains Mono",monospace}';
+  document.head.appendChild(st);
+
+  render();
+})();
+</script>
+</body>
+</html>
